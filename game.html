@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Shadow League: War of the Rings - PvP Arena</title>
+<style>
+  body {
+    margin: 0;
+    background: linear-gradient(135deg, #0b0b0b, #1a1a1a);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+  }
+  header {
+    background-color: #111;
+    padding: 20px;
+    text-align: center;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    border-bottom: 3px solid #5a1a00;
+    color: #ff6f00;
+    text-shadow: 0 0 10px #ff6f00;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    background-color: #222;
+    padding: 12px;
+    border-bottom: 3px solid #5a1a00;
+  }
+  nav button {
+    background-color: #333;
+    color: #ff6f00;
+    border: 2px solid #ff6f00;
+    padding: 10px 18px;
+    margin: 6px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+  nav button:hover {
+    background-color: #ff6f00;
+    color: #111;
+  }
+  #gameArea {
+    padding: 30px;
+    max-width: 1000px;
+    margin: auto;
+    background: #1c1c1c;
+    border-radius: 15px;
+    box-shadow: 0 0 25px #ff6f00aa;
+  }
+  .panel {
+    display: none;
+  }
+  .active {
+    display: block;
+  }
+
+  /* PvP Arena layout */
+  #pvp {
+    text-align: center;
+  }
+  .players-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+  }
+  .player-box {
+    width: 45%;
+    background: #2a2a2a;
+    border: 3px solid #ff6f00;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 0 15px #ff6f00cc inset;
+    position: relative;
+  }
+  .player-name {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ffa726;
+    margin-bottom: 15px;
+    text-shadow: 0 0 6px #ff6f00;
+  }
+
+  .avatar {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 15px auto;
+    border-radius: 50%;
+    background: #444;
+    box-shadow: 0 0 15px #ff6f00;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Simple elemental ring icons - colored circles */
+  .ring-icon {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    border: 2px solid #ff6f00;
+    box-shadow: 0 0 8px #ff6f00;
+  }
+  .ring-Earth { background: #4caf50; }
+  .ring-Magma { background: #e65100; }
+  .ring-Fire { background: #d84315; }
+  .ring-Air { background: #81d4fa; }
+  .ring-Water { background: #0288d1; }
+  .ring-Shadow { background: #6d4c41; }
+  .ring-Void { background: #212121; border-color: #9c27b0; box-shadow: 0 0 12px #9c27b0; }
+
+  /* Potion icons */
+  .potion-icon {
+    width: 28px;
+    height: 40px;
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: middle;
+    background: linear-gradient(180deg, #90caf9, #42a5f5);
+    border-radius: 8px 8px 4px 4px;
+    position: relative;
+    box-shadow: 0 0 8px #42a5f5;
+  }
+  .potion-Crystal\ Vision {
+    background: linear-gradient(180deg, #b2ff59, #689f38);
+    box-shadow: 0 0 10px #689f38;
+  }
+  .potion-Ash\ Cloak {
+    background: linear-gradient(180deg, #ffab91, #bf360c);
+    box-shadow: 0 0 10px #bf360c;
+  }
+  .potion-Void\ Flash {
+    background: linear-gradient(180deg, #7e57c2, #311b92);
+    box-shadow: 0 0 10px #311b92;
+  }
+
+  /* Health bars */
+  .health-bar-container {
+    background: #222;
+    width: 100%;
+    height: 25px;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .health-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #4caf50, #81c784);
+    transition: width 0.6s ease;
+    box-shadow: inset 0 0 5px #81c784;
+  }
+  .health-bar.low {
+    background: linear-gradient(90deg, #e53935, #ef5350);
+    box-shadow: inset 0 0 10px #ef5350;
+  }
+
+  /* Attack flash animation */
+  @keyframes attack-flash {
+    0% { box-shadow: 0 0 0px #ff6f00; }
+    50% { box-shadow: 0 0 25px #ff6f00; }
+    100% { box-shadow: 0 0 0px #ff6f00; }
+  }
+  .attack-flash {
+    animation: attack-flash 0.5s ease;
+  }
+
+  /* Controls */
+  .setup-controls {
+    margin-top: 15px;
+  }
+  select, button {
+    padding: 10px 14px;
+    margin: 8px 12px 12px 0;
+    background: #333;
+    color: #ff6f00;
+    border: 2px solid #ff6f00;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  select:hover, button:hover {
+    background: #ff6f00;
+    color: #111;
+  }
+
+  /* Battle Log */
+  #pvpLog {
+    background: #222;
+    height: 160px;
+    overflow-y: auto;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid #ff6f00;
+    margin-top: 25px;
+    font-family: 'Consolas', monospace;
+    font-size: 15px;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<header>Shadow League: War of the Rings</header>
+<nav>
+  <button onclick="showPanel('story')">Story</button>
+  <button onclick="showPanel('stats')">Stats</button>
+  <button onclick="showPanel('potions')">Potions</button>
+  <button onclick="showPanel('dragons')">Dragons</button>
+  <button onclick="showPanel('guild')">Guild</button>
+  <button onclick="showPanel('combat')">Combat</button>
+  <button onclick="showPanel('dex')">Index</button>
+  <button onclick="showPanel('inventory')">Inventory</button>
+  <button onclick="showPanel('map')">World Map</button>
+  <button onclick="showPanel('pvp')">PvP Arena</button>
+</nav>
+
+<div id="gameArea">
+  <!-- Other panels here (omitted for brevity) -->
+
+  <div id="pvp" class="panel">
+    <h2 style="color:#ffa726; text-shadow:0 0 6px #ff6f00;">PvP Arena</h2>
+    <div class="players-container">
+      <div class="player-box" id="player1Box">
+        <div class="player-name">Player 1</div>
+        <div class="avatar" id="p1Avatar" title="Player 1 Avatar">
+          <!-- Could be replaced with images or canvas drawing -->
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="48" fill="#4caf50" stroke="#ff6f00" stroke-width="4" />
+            <text x="50" y="60" fill="#fff" font-size="50" font-weight="bold" text-anchor="middle" font-family="Segoe UI">1</text>
+          </svg>
+        </div>
+        <div>
+          <span class="ring-icon ring-Earth" id="p1RingIcon" title="Ring"></span>
+          <span class="potion-icon potion-None" id="p1PotionIcon" title="Potion"></span>
+        </div>
+        <div class="health-bar-container">
+          <div id="p1HealthBar" class="health-bar"></div>
+        </div>
+        <div class="setup-controls">
+          <label for="p1Ring">Ring:</label>
+          <select id="p1Ring" onchange="updatePlayerIcon(1)">
+            <option value="Earth">Earth Ring</option>
+            <option value="Magma">Magma Ring</option>
+            <option value="Fire">Fire Ring</option>
+            <option value="Air">Air Ring</option>
+            <option value="Water">Water Ring</option>
+            <option value="Shadow">Shadow Ring</option>
+            <option value="Void">Void Ring</option>
+          </select>
+          <label for="p1Potion">Potion:</label>
+          <select id="p1Potion" onchange="updatePlayerIcon(1)">
+            <option value="None">None</option>
+            <option value="Crystal Vision">Crystal Vision Potion</option>
+            <option value="Ash Cloak">Ash Cloak Potion</option>
+            <option value="Void Flash">Void Flash Elixir</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="player-box" id="player2Box">
+        <div class="player-name">Player 2</div>
+        <div class="avatar" id="p2Avatar" title="Player 2 Avatar">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="48" fill="#d84315" stroke="#ff6f00" stroke-width="4" />
+            <text x="50" y="60" fill="#fff" font-size="50" font-weight="bold" text-anchor="middle" font-family="Segoe UI">2</text>
+          </svg>
+        </div>
+        <div>
+          <span class="ring-icon ring-Fire" id="p2RingIcon" title="Ring"></span>
+          <span class="potion-icon potion-None" id="p2PotionIcon" title="Potion"></span>
+        </div>
+        <div class="health-bar-container">
+          <div id="p2HealthBar" class="health-bar"></div>
+        </div>
+        <div class="setup-controls">
+          <label for="p2Ring">Ring:</label>
+          <select id="p2Ring" onchange="updatePlayerIcon(2)">
+            <option value="Earth">Earth Ring</option>
+            <option value="Magma">Magma Ring</option>
+            <option value="Fire" selected>Fire Ring</option>
+            <option value="Air">Air Ring</option>
+            <option value="Water">Water Ring</option>
+            <option value="Shadow">Shadow Ring</option>
+            <option value="Void">Void Ring</option>
+          </select>
+          <label for="p2Potion">Potion:</label>
+          <select id="p2Potion" onchange="updatePlayerIcon(2)">
+            <option value="None">None</option>
+            <option value="Crystal Vision">Crystal Vision Potion</option>
+            <option value="Ash Cloak">Ash Cloak Potion</option>
+            <option value="Void Flash">Void Flash Elixir</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button style="margin-top: 30px; padding: 15px 30px; font-size: 18px; font-weight: 900; border-radius: 10px;" onclick="startPvPCombat()">Start PvP Battle</button>
+
+    <div id="pvpLog"></div>
+  </div>
+</div>
+
+<script>
+  // Ring to CSS class map
+  const ringClassMap = {
+    "Earth": "ring-Earth",
+    "Magma": "ring-Magma",
+    "Fire": "ring-Fire",
+    "Air": "ring-Air",
+    "Water": "ring-Water",
+    "Shadow": "ring-Shadow",
+    "Void": "ring-Void"
+  };
+  // Potion to CSS class map
+  const potionClassMap = {
+    "None": "potion-None",
+    "Crystal Vision": "potion-Crystal\\ Vision",
+    "Ash Cloak": "potion-Ash\\ Cloak",
+    "Void Flash": "potion-Void\\ Flash"
+  };
+
+  // Update ring and potion icons when selection changes
+  function updatePlayerIcon(playerNum) {
+    const ringSelect = document.getElementById(`p${playerNum}Ring`);
+    const potionSelect = document.getElementById(`p${playerNum}Potion`);
+    const ringIcon = document.getElementById(`p${playerNum}RingIcon`);
+    const potionIcon = document.getElementById(`p${playerNum}PotionIcon`);
+
+    // Remove old classes
+    Object.values(ringClassMap).forEach(c => ringIcon.classList.remove(c));
+    Object.values(potionClassMap).forEach(c => potionIcon.classList.remove(c));
+
+    // Add new classes
+    ringIcon.classList.add(ringClassMap[ringSelect.value]);
+    potionIcon.classList.add(potionClassMap[potionSelect.value]);
+
+    // Update avatar circle color for fun
+    const avatarSVG = document.querySelector(`#p${playerNum}Avatar circle`);
+    switch (ringSelect.value) {
+      case "Earth": avatarSVG.setAttribute("fill", "#4caf50"); break;
+      case "Magma": avatarSVG.setAttribute("fill", "#e65100"); break;
+      case "Fire": avatarSVG.setAttribute("fill", "#d84315"); break;
+      case "Air": avatarSVG.setAttribute("fill", "#81d4fa"); break;
+      case "Water": avatarSVG.setAttribute("fill", "#0288d1"); break;
+      case "Shadow": avatarSVG.setAttribute("fill", "#6d4c41"); break;
+      case "Void": avatarSVG.setAttribute("fill", "#212121"); break;
+      default: avatarSVG.setAttribute("fill", "#444"); break;
+    }
+  }
+
+  // Initialize icons
+  updatePlayerIcon(1);
+  updatePlayerIcon(2);
+
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function createPlayer(name, ring, potion) {
+    let baseStats = {
+      health: 100,
+      strength: 10,
+      agility: 10,
+      elementalPower: 10,
+      shadowPower: 5,
+    };
+    switch (ring) {
+      case "Earth": baseStats.strength += 5; break;
+      case "Magma": baseStats.elementalPower += 7; break;
+      case "Fire": baseStats.elementalPower += 6; baseStats.agility += 2; break;
+      case "Air": baseStats.agility += 6; break;
+      case "Water": baseStats.health += 20; break;
+      case "Shadow": baseStats.shadowPower += 10; baseStats.agility += 3; break;
+      case "Void": baseStats.shadowPower += 15; baseStats.strength += 3; break;
+    }
+    if (potion === "Crystal Vision") {
+      baseStats.agility += 5;
+    } else if (potion === "Ash Cloak") {
+      baseStats.health += 30;
+    } else if (potion === "Void Flash") {
+      baseStats.shadowPower += 7;
+      baseStats.strength += 3;
+    }
+    return {
+      name,
+      ring,
+      potion,
+      health: baseStats.health,
+      maxHealth: baseStats.health,
+      strength: baseStats.strength,
+      agility: baseStats.agility,
+      elementalPower: baseStats.elementalPower,
+      shadowPower: baseStats.shadowPower,
+      isDefending: false
+    };
+  }
+
+  let p1, p2;
+  let currentTurn = 1;
+  let battleOngoing = false;
+
+  function log(text) {
+    const logDiv = document.getElementById("pvpLog");
+    logDiv.innerText += text + "\n";
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  function updateHealthBars() {
+    const p1HealthPercent = Math.max(0, (p1.health / p1.maxHealth) * 100);
+    const p2HealthPercent = Math.max(0, (p2.health / p2.maxHealth) * 100);
+
+    const p1Bar = document.getElementById("p1HealthBar");
+    const p2Bar = document.getElementById("p2HealthBar");
+
+    p1Bar.style.width = p1HealthPercent + "%";
+    p2Bar.style.width = p2HealthPercent + "%";
+
+    if (p1HealthPercent < 30) {
+      p1Bar.classList.add("low");
+    } else {
+      p1Bar.classList.remove("low");
+    }
+    if (p2HealthPercent < 30) {
+      p2Bar.classList.add("low");
+    } else {
+      p2Bar.classList.remove("low");
+    }
+  }
+
+  // Flash the attacking player's avatar on attack
+  function flashAttack(playerNum) {
+    const avatar = document.getElementById(`p${playerNum}Avatar`);
+    avatar.classList.add("attack-flash");
+    setTimeout(() => avatar.classList.remove("attack-flash"), 500);
+  }
+
+  function calculateDamage(attacker, defender) {
+    let baseDamage = attacker.strength + attacker.elementalPower + attacker.shadowPower;
+    let hitChance = 75 + (attacker.agility - defender.agility) * 2;
+    hitChance = Math.min(95, Math.max(20, hitChance));
+    if (Math.random() * 100 > hitChance) {
+      return 0;
+    }
+    let critChance = 10 + attacker.agility * 0.5;
+    let crit = (Math.random() * 100 < critChance);
+    let damage = baseDamage + randInt(5, 15);
+    if (crit) {
+      damage *= 1.5;
+    }
+    if (defender.isDefending) {
+      damage /= 2;
+    }
+    return { damage: Math.floor(damage), crit };
+  }
+
+  function nextTurn() {
+    if (!battleOngoing) return;
+
+    let attacker = currentTurn === 1 ? p1 : p2;
+    let defender = currentTurn === 1 ? p2 : p1;
+
+    let action = "attack";
+
+    if (currentTurn === 2) {
+      action = Math.random() < 0.2 ? "defend" : "attack";
+    }
+
+    if (action === "defend") {
+      attacker.isDefending = true;
+      log(`${attacker.name} defends and braces for the next attack.`);
+    } else {
+      attacker.isDefending = false;
+      flashAttack(currentTurn);
+      const result = calculateDamage(attacker, defender);
+      if (result.damage === 0) {
+        log(`${attacker.name} attacks but misses!`);
+      } else {
+        defender.health -= result.damage;
+        let critText = result.crit ? " Critical hit!" : "";
+        log(`${attacker.name} attacks with ${attacker.ring} + ${attacker.potion} for ${result.damage} damage!${critText}`);
+        if (defender.health <= 0) {
+          defender.health = 0;
+          updateHealthBars();
+          log(`\n🔥🔥🔥 ${attacker.name} WINS THE BATTLE! 🔥🔥🔥`);
+          battleOngoing = false;
+          return;
+        }
+      }
+    }
+
+    updateHealthBars();
+    currentTurn = currentTurn === 1 ? 2 : 1;
+    if (battleOngoing) {
+      setTimeout(nextTurn, 1600);
+    }
+  }
+
+  function startPvPCombat() {
+    if (battleOngoing) {
+      alert("Battle already in progress!");
+      return;
+    }
+    p1 = createPlayer("Player 1", document.getElementById("p1Ring").value, document.getElementById("p1Potion").value);
+    p2 = createPlayer("Player 2", document.getElementById("p2Ring").value, document.getElementById("p2Potion").value);
+    currentTurn = 1;
+    battleOngoing = true;
+    document.getElementById("pvpLog").innerText = "";
+    log("⚔️ Battle started! Player 1 vs Player 2 ⚔️");
+    updateHealthBars();
+    nextTurn();
+  }
+
+  function showPanel(id) {
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  // Init
+  window.onload = function () {
+    showPanel("pvp");
+  };
+</script>
+</body>
+</html>
