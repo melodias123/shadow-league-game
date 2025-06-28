@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shadow League: War of the Rings</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #0b0b0b;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    header {
+      background-color: #1a1a1a;
+      padding: 20px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      border-bottom: 2px solid #333;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      background-color: #111;
+      padding: 10px;
+      border-bottom: 2px solid #444;
+    }
+    nav button {
+      background-color: #222;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    nav button:hover {
+      background-color: #444;
+    }
+    #gameArea {
+      padding: 20px;
+    }
+    .panel {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #181818;
+      border: 1px solid #333;
+    }
+    .active {
+      display: block;
+    }
+    .list-box {
+      background-color: #222;
+      border: 1px solid #444;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .map-tile {
+      background-color: #2a2a2a;
+      border: 1px solid #555;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .map-tile:hover {
+      background-color: #444;
+    }
+    .inventory-box {
+      margin-top: 15px;
+      padding: 10px;
+      background: #252525;
+      border: 1px solid #555;
+    }
+    #saveLoadButtons {
+      margin-top: 10px;
+    }
+    #saveLoadButtons button {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>Shadow League: War of the Rings</header>
+  <nav>
+    <button onclick="showPanel('story')">Story</button>
+    <button onclick="showPanel('stats')">Stats</button>
+    <button onclick="showPanel('potions')">Potions</button>
+    <button onclick="showPanel('dragons')">Dragons</button>
+    <button onclick="showPanel('guild')">Guild</button>
+    <button onclick="showPanel('combat')">Combat</button>
+    <button onclick="showPanel('dex')">Index</button>
+    <button onclick="showPanel('inventory')">Inventory</button>
+    <button onclick="showPanel('map')">World Map</button>
+  </nav>
+  <div id="gameArea">
+    <div id="story" class="panel active">
+      <h2>Story Mode</h2>
+      <p>Begin your journey to defeat the Dark Lord and claim the Void Ring.</p>
+      <button onclick="startQuest()">Start Quest</button>
+    </div>
+    <div id="map" class="panel">
+      <h2>World Map</h2>
+      <p>Click a location to travel there.</p>
+      <div class="map-grid">
+        <div class="map-tile" onclick="travelTo('Stoneclaw Island')">🪨 Stoneclaw Island</div>
+        <div class="map-tile" onclick="travelTo('Ashdrift Isle')">🌋 Ashdrift Isle</div>
+        <div class="map-tile" onclick="travelTo('Ironhold')">⚙️ Ironhold</div>
+        <div class="map-tile" onclick="travelTo('Tidegrave')">❄️ Tidegrave</div>
+        <div class="map-tile" onclick="travelTo('Stormspire')">⚡ Stormspire</div>
+        <div class="map-tile" onclick="travelTo('Crystalis')">💎 Crystalis</div>
+        <div class="map-tile" onclick="travelTo('Shadow Maw')">🔥 Shadow Maw</div>
+        <div class="map-tile" onclick="travelTo('Space X Crash Site')">🚀 Space X Crash Site</div>
+        <div class="map-tile" onclick="travelTo('Lightly Fortress')">☀️ Lightly Fortress</div>
+      </div>
+      <p id="currentLocation" style="margin-top: 20px; font-weight: bold;"></p>
+      <div id="saveLoadButtons">
+        <button onclick="saveGame()">Save Game</button>
+        <button onclick="loadGame()">Load Game</button>
+      </div>
+    </div>
+    <div id="stats" class="panel">
+      <h2>Player Stats</h2>
+      <ul id="statsList"></ul>
+    </div>
+    <div id="potions" class="panel">
+      <h2>Potions Lab</h2>
+      <p>Brew new potions from ingredients!</p>
+      <select id="ingredient1">
+        <option value="none">-- Ingredient 1 --</option>
+        <option value="crystal">Crystal Dust</option>
+        <option value="magma">Magma Core</option>
+        <option value="shadow">Shadow Ink</option>
+      </select>
+      <select id="ingredient2">
+        <option value="none">-- Ingredient 2 --</option>
+        <option value="dragon">Dragon Scale</option>
+        <option value="light">Light Drop</option>
+        <option value="mist">Mist Pearl</option>
+      </select>
+      <button onclick="brewPotion()">Brew</button>
+      <p id="brewResult"></p>
+    </div>
+    <div id="dragons" class="panel">
+      <h2>Dragon Forge</h2>
+      <p>Bond with elemental dragons and upgrade them over time.</p>
+      <div id="dragonList"></div>
+    </div>
+    <div id="guild" class="panel">
+      <h2>Guild Hall</h2>
+      <p>Create, join, and manage your guild.</p>
+      <button onclick="alert('Guild features loading...')">Manage Guild</button>
+    </div>
+    <div id="combat" class="panel">
+      <h2>Combat Arena</h2>
+      <p>Choose an enemy and test your skills in battle!</p>
+      <button onclick="startCombat()">Enter Arena</button>
+      <div id="combatLog"></div>
+    </div>
+    <div id="dex" class="panel">
+      <h2>Elemental Index</h2>
+      <p>List of all Rings and Shadow Fruits.</p>
+      <div class="list-box" id="ringDex"></div>
+      <div class="list-box" id="fruitDex"></div>
+    </div>
+    <div id="inventory" class="panel">
+      <h2>Inventory</h2>
+      <div id="inventoryList" class="inventory-box"></div>
+    </div>
+  </div>
+
+  <script>
+    let stats = {
+      Strength: 10,
+      Agility: 8,
+      ElementMastery: 12,
+      ShadowPower: 7,
+      DragonAffinity: 5,
+      Credits: 1200,
+      Bounty: 2300
+    };
+
+    let inventory = ["Earth Ring", "Panoramic Elixir", "Dragon Scale"];
+    let potions = {
+      "crystal+dragon": "Crystal Vision Potion",
+      "magma+mist": "Ash Cloak Potion",
+      "shadow+light": "Void Flash Elixir"
+    };
+    let dragons = [
+      { name: "Earth Drake", level: 1 },
+      { name: "Inferno Serpent", level: 1 },
+      { name: "Void Dragon", level: 1 }
+    ];
+    let ringDex = [
+      "Earth Ring", "Magma Ring", "Fire Ring", "Air Ring", "Water Ring",
+      "Metal Ring", "Crystal Ring", "Shadow Ring", "Void Ring"
+    ];
+    let fruitDex = [
+      "Gravito Fruit", "Inferno Fruit", "Shard Fruit",
+      "Clone Fruit", "Null Fruit", "Forge Fruit"
+    ];
+
+    let currentLocation = "Unknown";
+
+    function showPanel(id) {
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function startQuest() {
+      alert("Your first quest begins! Travel to Earth Island and recover the Razor Scroll.");
+    }
+
+    function travelTo(location) {
+      currentLocation = location;
+      document.getElementById("currentLocation").innerText = `You have arrived at: ${location}`;
+      alert(`Traveling to ${location}...`);
+      saveGame(); // Auto-save on travel
+    }
+
+    function brewPotion() {
+      const i1 = document.getElementById("ingredient1").value;
+      const i2 = document.getElementById("ingredient2").value;
+      const key = [i1, i2].sort().join("+");
+      const result = potions[key];
+      document.getElementById("brewResult").innerText = result ? `Brewed: ${result}` : "Nothing happened... try another combo.";
+      if (result && !inventory.includes(result)) {
+        inventory.push(result);
+        loadInventory();
+        saveGame();
+      }
+    }
+
+    function startCombat() {
+      document.getElementById("combatLog").innerText = "You face a rogue Shadow Bender. Using Earth Ring... CRITICAL HIT! Victory!";
+    }
+
+    function loadStats() {
+      const statList = document.getElementById("statsList");
+      statList.innerHTML = "";
+      for (let s in stats) {
+        const li = document.createElement("li");
+        li.innerText = `${s}: ${stats[s]}`;
+        statList.appendChild(li);
+      }
+    }
+
+    function loadInventory() {
+      const invBox = document.getElementById("inventoryList");
+      invBox.innerHTML = inventory.map(item => `<div>${item}</div>`).join("");
+    }
+
+    function loadDragons() {
+      const dList = document.getElementById("dragonList");
+      dList.innerHTML = dragons.map(d => `<p>${d.name} - Level ${d.level}</p>`).join("");
+    }
+
+    function loadDex() {
+      document.getElementById("ringDex").innerHTML = `<h3>Rings:</h3><ul>${ringDex.map(r => `<li>${r}</li>`).join('')}</ul>`;
+      document.getElementById("fruitDex").innerHTML = `<h3>Shadow Fruits:</h3><ul>${fruitDex.map(f => `<li>${f}</li>`).join('')}</ul>`;
+    }
+
+    function saveGame() {
+      const saveData = {
+        stats,
+        inventory,
+        dragons,
+        currentLocation
+      };
+      localStorage.setItem("shadowLeagueSave", JSON.stringify(saveData));
+      alert("Game saved!");
+    }
+
+    function loadGame() {
+      const saved = localStorage.getItem("shadowLeagueSave");
+      if (!saved) {
+        alert("No saved game found.");
+        return;
+      }
+      const data = JSON.parse(saved);
+      stats = data.stats || stats;
+      inventory = data.inventory || inventory;
+      dragons = data.dragons || dragons;
+      currentLocation = data.currentLocation || currentLocation;
+
+      loadStats();
+      loadInventory();
+      loadDragons();
+      document.getElementById("currentLocation").innerText = `You have arrived at: ${currentLocation}`;
+      alert("Game loaded!");
+    }
+
+    // Load data on start
+    window.onload = function () {
+      loadStats();
+      loadInventory();
+      loadDragons();
+      loadDex();
+      document.getElementById("currentLocation").innerText = `You have arrived at: ${currentLocation}`;
+    };
+  </script>
+</body>
+</html>
